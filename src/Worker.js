@@ -22,12 +22,10 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 
-import {
-  Environment,
-  FilePath,
-  Namespace,
-  UUID,
-} from '@takram/planck-core'
+import Environment from '@takram/planck-core/src/Environment'
+import FilePath from '@takram/planck-core/src/FilePath'
+import Namespace from '@takram/planck-core/src/Namespace'
+import UUID from '@takram/planck-core/src/UUID'
 
 export const internal = Namespace('Worker')
 
