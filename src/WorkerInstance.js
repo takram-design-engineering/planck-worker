@@ -24,12 +24,10 @@
 
 /* eslint-disable no-console */
 
-import {
-  Environment,
-  FilePath,
-  Namespace,
-  Transferral,
-} from '@takram/planck-core'
+import Environment from '@takram/planck-core/src/Environment'
+import FilePath from '@takram/planck-core/src/FilePath'
+import Namespace from '@takram/planck-core/src/Namespace'
+import Transferral from '@takram/planck-core/src/Transferral'
 
 export const internal = Namespace('WorkerInstance')
 

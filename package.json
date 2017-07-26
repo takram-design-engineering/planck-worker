@@ -17,12 +17,9 @@
     "src"
   ],
   "scripts": {
-    "build": "npm-run-all --parallel build:main build:module",
-    "build:main": "npm-run-all main:compile main:uglify",
-    "build:module": "npm-run-all module:compile",
+    "build": "npm-run-all main:compile main:uglify",
     "main:compile": "rollup -c",
     "main:uglify": "uglifyjs --compress --mangle --output dist/planck-worker.min.js dist/planck-worker.js",
-    "module:compile": "rollup -c rollup.config.module.js",
     "test": "npm-run-all lint test:compile test:cloud",
     "test:compile": "npm-run-all --parallel test:compile:unit test:compile:fixture",
     "test:compile:unit": "rollup -c rollup.config.unit.js",
@@ -35,7 +32,7 @@
     "serve": "browser-sync start --server . --files dist --startPath test --no-notify"
   },
   "dependencies": {
-    "@takram/planck-core": "^0.1.14",
+    "@takram/planck-core": "^0.1.15",
     "babel-polyfill": "^6.23.0"
   },
   "devDependencies": {
