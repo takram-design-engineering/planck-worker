@@ -32,7 +32,7 @@
     "serve": "browser-sync start --server . --files dist --startPath test --no-notify"
   },
   "dependencies": {
-    "@takram/planck-core": "^0.1.15",
+    "@takram/planck-core": "^0.1.17",
     "babel-polyfill": "^6.23.0"
   },
   "devDependencies": {
