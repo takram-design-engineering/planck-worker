@@ -22,12 +22,17 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 
-import path from 'path'
 import babel from 'rollup-plugin-babel'
+import builtins from 'builtin-modules'
+import camelcase from 'camelcase'
 import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
+import path from 'path'
 
 const pkg = require('./package.json')
+const globals = builtins.reduce((globals, builtin) => {
+  return Object.assign(globals, { [builtin]: camelcase(builtin) })
+}, {})
 
 export default {
   entry: './test/unit.js',
@@ -49,17 +54,18 @@ export default {
     }),
   ],
   external: [
+    ...builtins,
     path.resolve(pkg.module),
     'chai',
     'mocha',
     'sinon',
   ],
-  globals: {
+  globals: Object.assign(globals, {
     [path.resolve(pkg.module)]: 'Planck',
     'chai': 'chai',
     'mocha': 'mocha',
     'sinon': 'sinon',
-  },
+  }),
   targets: [
     {
       format: 'iife',
