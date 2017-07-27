@@ -52,8 +52,11 @@ export default {
   ],
   external: [
     ...builtins,
+    'text-encoding',
   ],
-  globals,
+  globals: Object.assign(globals, {
+    'text-encoding': 'encoding',
+  }),
   targets: [
     {
       format: 'umd',

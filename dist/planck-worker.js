@@ -1,8 +1,129 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.Planck = global.Planck || {})));
-}(this, (function (exports) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('text-encoding')) :
+	typeof define === 'function' && define.amd ? define(['exports', 'text-encoding'], factory) :
+	(factory((global.Planck = global.Planck || {}),global.encoding));
+}(this, (function (exports,encoding) { 'use strict';
+
+encoding = encoding && encoding.hasOwnProperty('default') ? encoding['default'] : encoding;
+
+//
+//  The MIT License
+//
+//  Copyright (C) 2016-Present Shota Matsuda
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a
+//  copy of this software and associated documentation files (the "Software"),
+//  to deal in the Software without restriction, including without limitation
+//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+//  and/or sell copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
+//
+
+var Environment = {
+  get type() {
+    try {
+      // eslint-disable-next-line no-new-func
+      if (new Function('return this === window')()) {
+        return 'browser';
+      }
+    } catch (error) {}
+    try {
+      // eslint-disable-next-line no-new-func
+      if (new Function('return this === self')()) {
+        return 'worker';
+      }
+    } catch (error) {}
+    try {
+      // eslint-disable-next-line no-new-func
+      if (new Function('return this === global')()) {
+        return 'node';
+      }
+    } catch (error) {}
+    throw new Error();
+  },
+
+  get self() {
+    switch (this.type) {
+      case 'browser':
+        return window;
+      case 'worker':
+        return self;
+      case 'node':
+        return global;
+      default:
+        break;
+    }
+    throw new Error();
+  }
+};
+
+//
+//  The MIT License
+//
+//  Copyright (C) 2016-Present Shota Matsuda
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a
+//  copy of this software and associated documentation files (the "Software"),
+//  to deal in the Software without restriction, including without limitation
+//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+//  and/or sell copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
+//
+
+function currentScriptPath() {
+  switch (Environment.type) {
+    case 'browser':
+      {
+        // eslint-disable-next-line no-underscore-dangle
+        var currentScript = document.currentScript || document._currentScript;
+        if (!currentScript) {
+          return null;
+        }
+        return currentScript.src;
+      }
+    case 'worker':
+      return self.location.href;
+    case 'node':
+      return __filename;
+    default:
+      break;
+  }
+  throw new Error();
+}
+
+var initialScriptPath = currentScriptPath();
+
+var FilePath = {
+  get self() {
+    return initialScriptPath;
+  },
+
+  get current() {
+    return currentScriptPath();
+  }
+};
 
 //
 //  The MIT License
@@ -43,218 +164,6 @@ function Namespace() {
     return object[symbol];
   };
 }
-
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
-};
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-
-
-var Environment = function () {
-  function Environment() {
-    classCallCheck(this, Environment);
-  }
-
-  createClass(Environment, null, [{
-    key: 'type',
-    get: function get$$1() {
-      try {
-        // eslint-disable-next-line no-new-func
-        if (new Function('return this === window')()) {
-          return 'browser';
-        }
-      } catch (error) {}
-      try {
-        // eslint-disable-next-line no-new-func
-        if (new Function('return this === self')()) {
-          return 'worker';
-        }
-      } catch (error) {}
-      try {
-        // eslint-disable-next-line no-new-func
-        if (new Function('return this === global')()) {
-          return 'node';
-        }
-      } catch (error) {}
-      throw new Error();
-    }
-  }, {
-    key: 'self',
-    get: function get$$1() {
-      switch (this.type) {
-        case 'browser':
-          return window;
-        case 'worker':
-          return self;
-        case 'node':
-          return global;
-        default:
-          break;
-      }
-      throw new Error();
-    }
-  }]);
-  return Environment;
-}();
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-var internal$2 = Namespace('FilePath');
-
-var FilePath = function () {
-  function FilePath() {
-    classCallCheck(this, FilePath);
-  }
-
-  createClass(FilePath, null, [{
-    key: 'self',
-    get: function get$$1() {
-      var scope = internal$2(this);
-      return scope.self;
-    }
-  }, {
-    key: 'current',
-    get: function get$$1() {
-      switch (Environment.type) {
-        case 'browser':
-          {
-            // eslint-disable-next-line no-underscore-dangle
-            var currentScript = document.currentScript || document._currentScript;
-            if (!currentScript) {
-              return null;
-            }
-            return currentScript.src;
-          }
-        case 'worker':
-          return self.location.href;
-        case 'node':
-          return __filename;
-        default:
-          break;
-      }
-      throw new Error();
-    }
-  }]);
-  return FilePath;
-}();
-
-internal$2(FilePath).self = FilePath.current;
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -475,6 +384,80 @@ function UUID() {
   return index.v4();
 }
 
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
+
 //
 //  The MIT License
 //
@@ -685,79 +668,57 @@ var base64Arraybuffer = createCommonjsModule(function (module, exports) {
 //  DEALINGS IN THE SOFTWARE.
 //
 
-if (Environment.type === 'node') {
-  // eslint-disable-next-line global-require
-  var encoding = require('text-encoding');
-  if (Environment.self.TextEncoder === undefined) {
-    Environment.self.TextEncoder = encoding.TextEncoder;
-  }
-  if (Environment.self.TextDecoder === undefined) {
-    Environment.self.TextDecoder = encoding.TextDecoder;
-  }
+if (Environment.self.TextEncoder === undefined) {
+  Environment.self.TextEncoder = encoding.TextEncoder;
+}
+if (Environment.self.TextDecoder === undefined) {
+  Environment.self.TextDecoder = encoding.TextDecoder;
 }
 
-var Transferral = function () {
-  function Transferral() {
-    classCallCheck(this, Transferral);
+var Transferral = {
+  encode: function encode(object) {
+    if (TextEncoder === undefined) {
+      throw new Error('TextEncoder is missing');
+    }
+    var encoder = new TextEncoder();
+    var text = JSON.stringify(object);
+    var array = encoder.encode(text);
+    return array.buffer;
+  },
+  decode: function decode(buffer) {
+    if (TextDecoder === undefined) {
+      throw new Error('TextDecoder is missing');
+    }
+    var decoder = new TextDecoder();
+    var view = new DataView(buffer);
+    var text = decoder.decode(view);
+    return JSON.parse(text);
+  },
+  pack: function pack(buffer) {
+    return base64Arraybuffer.encode(buffer);
+  },
+  unpack: function unpack(string) {
+    return base64Arraybuffer.decode(string);
+  },
+  packBufferGeometry: function packBufferGeometry(geometry) {
+    var _this = this;
+
+    Object.values(geometry.data.attributes).forEach(function (attribute) {
+      var constructor = Environment.self[attribute.type];
+      var buffer = new constructor(attribute.array).buffer;
+      attribute.array = _this.pack(buffer);
+    });
+  },
+  unpackBufferGeometry: function unpackBufferGeometry(geometry) {
+    var _this2 = this;
+
+    Object.values(geometry.data.attributes).forEach(function (attribute) {
+      var constructor = Environment.self[attribute.type];
+      var buffer = _this2.unpack(attribute.array);
+      attribute.array = Array.from(new constructor(buffer));
+    });
   }
-
-  createClass(Transferral, null, [{
-    key: 'encode',
-    value: function encode(object) {
-      if (typeof TextEncoder !== 'function') {
-        throw new Error('TextEncoder is missing');
-      }
-      var encoder = new TextEncoder();
-      var text = JSON.stringify(object);
-      var array = encoder.encode(text);
-      return array.buffer;
-    }
-  }, {
-    key: 'decode',
-    value: function decode(buffer) {
-      if (typeof TextDecoder !== 'function') {
-        throw new Error('TextDecoder is missing');
-      }
-      var decoder = new TextDecoder();
-      var view = new DataView(buffer);
-      var text = decoder.decode(view);
-      return JSON.parse(text);
-    }
-  }, {
-    key: 'pack',
-    value: function pack(buffer) {
-      return base64Arraybuffer.encode(buffer);
-    }
-  }, {
-    key: 'unpack',
-    value: function unpack(string) {
-      return base64Arraybuffer.decode(string);
-    }
-  }, {
-    key: 'packBufferGeometry',
-    value: function packBufferGeometry(geometry) {
-      var _this = this;
-
-      Object.values(geometry.data.attributes).forEach(function (attribute) {
-        var constructor = Environment.self[attribute.type];
-        var buffer = new constructor(attribute.array).buffer;
-        attribute.array = _this.pack(buffer);
-      });
-    }
-  }, {
-    key: 'unpackBufferGeometry',
-    value: function unpackBufferGeometry(geometry) {
-      var _this2 = this;
-
-      Object.values(geometry.data.attributes).forEach(function (attribute) {
-        var constructor = Environment.self[attribute.type];
-        var buffer = _this2.unpack(attribute.array);
-        attribute.array = Array.from(new constructor(buffer));
-      });
-    }
-  }]);
-  return Transferral;
-}();
+};
 
 //
 //  The MIT License
@@ -785,13 +746,13 @@ var Transferral = function () {
 
 /* eslint-disable no-console */
 
-var internal$3 = Namespace('WorkerInstance');
+var internal$1 = Namespace('WorkerInstance');
 
 var WorkerInstance = function () {
   function WorkerInstance() {
     classCallCheck(this, WorkerInstance);
 
-    var scope = internal$3(this);
+    var scope = internal$1(this);
     scope.handleMessage = this.handleMessage.bind(this);
   }
 
@@ -803,7 +764,7 @@ var WorkerInstance = function () {
       if (Environment.type !== 'worker') {
         throw new Error();
       }
-      var scope = internal$3(this);
+      var scope = internal$1(this);
       (_Environment$self = Environment.self).importScripts.apply(_Environment$self, toConsumableArray(this.constructor.imports.map(function (path) {
         return FilePath.resolve(path);
       })));
@@ -813,7 +774,7 @@ var WorkerInstance = function () {
   }, {
     key: 'stop',
     value: function stop() {
-      var scope = internal$3(this);
+      var scope = internal$1(this);
       Environment.self.removeEventListener('message', scope.handleMessage, false);
       console.log(this.constructor.name + ' stopped');
     }
