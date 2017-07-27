@@ -55,12 +55,14 @@ export default {
   ],
   external: [
     ...builtins,
+    'text-encoding',
     path.resolve(pkg.module),
     'chai',
     'mocha',
     'sinon',
   ],
   globals: Object.assign(globals, {
+    'text-encoding': 'encoding',
     [path.resolve(pkg.module)]: 'Planck',
     'chai': 'chai',
     'mocha': 'mocha',
