@@ -21,8 +21,9 @@
     "main:compile": "rollup -c",
     "main:uglify": "uglifyjs --compress --mangle --output dist/planck-worker.min.js dist/planck-worker.js",
     "test": "npm-run-all lint test:compile test:cloud",
-    "test:compile": "npm-run-all --parallel test:compile:unit test:compile:fixture",
-    "test:compile:unit": "rollup -c rollup.config.unit.js",
+    "test:compile": "npm-run-all --parallel test:compile:rollup test:compile:webpack test:compile:fixture",
+    "test:compile:rollup": "rollup -c rollup.config.unit.js",
+    "test:compile:webpack": "webpack --config webpack.config.unit.js",
     "test:compile:fixture": "rollup -c rollup.config.fixture.js",
     "test:cloud": "mocha test/setup.js",
     "lint": "eslint src test",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@takram/eslint-config-planck": "^0.1.7",
     "babel-core": "^6.25.0",
+    "babel-loader": "^7.1.1",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.6.0",
     "babel-preset-es2015": "^6.24.1",
@@ -61,7 +63,8 @@
     "saucelabs": "^1.4.0",
     "sinon": "^2.4.1",
     "sinon-chai": "^2.12.0",
-    "uglify-js": "^3.0.27"
+    "uglify-js": "^3.0.27",
+    "webpack": "^3.4.1"
   },
   "saucelabs": {
     "framework": "mocha",

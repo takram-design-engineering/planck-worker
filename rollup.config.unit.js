@@ -48,6 +48,7 @@ export default {
       babelrc: false,
     }),
   ],
+  intro: 'var BUNDLER = "rollup";',
   external: [
     path.resolve(pkg.module),
     'chai',
@@ -63,7 +64,7 @@ export default {
   targets: [
     {
       format: 'iife',
-      dest: './dist/test/unit.js',
+      dest: './dist/test/unit/rollup.js',
     },
   ],
 }
