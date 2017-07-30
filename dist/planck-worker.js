@@ -1,10 +1,8 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('text-encoding')) :
-	typeof define === 'function' && define.amd ? define(['exports', 'text-encoding'], factory) :
-	(factory((global.Planck = global.Planck || {}),global.encoding));
-}(this, (function (exports,encoding) { 'use strict';
-
-encoding = encoding && encoding.hasOwnProperty('default') ? encoding['default'] : encoding;
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.Planck = global.Planck || {})));
+}(this, (function (exports) { 'use strict';
 
 //
 //  The MIT License
@@ -29,6 +27,19 @@ encoding = encoding && encoding.hasOwnProperty('default') ? encoding['default'] 
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 //
+
+function _external(id) {
+  if (process.browser) {
+    return {};
+    // eslint-disable-next-line no-else-return
+  } else {
+    if (Environment.type !== 'node') {
+      return {};
+    }
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    return require(id);
+  }
+}
 
 var Environment = {
   get type() {
@@ -65,6 +76,15 @@ var Environment = {
         break;
     }
     throw new Error();
+  },
+
+  external: function external(id) {
+    try {
+      return _external(id);
+    } catch (e) {
+      Environment.self.process = { browser: true };
+    }
+    return _external(id);
   }
 };
 
@@ -667,6 +687,8 @@ var base64Arraybuffer = createCommonjsModule(function (module, exports) {
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 //
+
+var encoding = Environment.external('text-encoding');
 
 var Transferral = {
   encode: function encode(object) {
