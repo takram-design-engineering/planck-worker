@@ -25,9 +25,7 @@
 /* eslint-disable no-console */
 
 import Environment from '@takram/planck-core/src/Environment'
-import FilePath from '@takram/planck-core/src/FilePath'
 import Namespace from '@takram/planck-core/src/Namespace'
-import Transferral from '@takram/planck-core/src/Transferral'
 
 class Transferable {
   constructor(message, list = []) {

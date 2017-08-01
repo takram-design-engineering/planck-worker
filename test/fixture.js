@@ -27,7 +27,7 @@ self.importScripts(
   '/dist/planck-worker.js',
 )
 
-const { Transferable, WorkerInstance } = self.Planck
+const { WorkerInstance } = self.Planck
 
 class TestWorkerInstance extends WorkerInstance {
   echo(arg) {
