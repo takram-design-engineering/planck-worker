@@ -29,21 +29,27 @@ self.importScripts(
 
 const { WorkerInstance } = self.Planck
 
-class EchoWorkerInstance extends WorkerInstance {
-  handleMessage(event) {
-    const { uuid, args } = event.data
-    this.post(uuid, ...args)
+class TestWorkerInstance extends WorkerInstance {
+  echo(arg) {
+    return arg
+  }
+
+  error(message) {
+    throw new Error(message)
+  }
+
+  delay(milliseconds) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(milliseconds)
+      }, milliseconds)
+    })
+  }
+
+  transfer(array) {
+    const buffer = new Float32Array(array).buffer
+    super.transfer(buffer, [buffer])
   }
 }
 
-EchoWorkerInstance.register()
-
-class DelayWorkerInstance extends WorkerInstance {
-  delay(uuid, milliseconds) {
-    setTimeout(() => {
-      this.post(uuid, milliseconds)
-    }, milliseconds)
-  }
-}
-
-DelayWorkerInstance.register()
+TestWorkerInstance.register()

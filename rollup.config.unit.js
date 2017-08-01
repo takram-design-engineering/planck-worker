@@ -23,16 +23,11 @@
 //
 
 import babel from 'rollup-plugin-babel'
-import builtins from 'builtin-modules'
-import camelcase from 'camelcase'
 import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 import path from 'path'
 
 const pkg = require('./package.json')
-const globals = builtins.reduce((globals, builtin) => {
-  return Object.assign(globals, { [builtin]: camelcase(builtin) })
-}, {})
 
 export default {
   entry: './test/unit.js',
@@ -53,25 +48,23 @@ export default {
       babelrc: false,
     }),
   ],
+  intro: 'var BUNDLER = "rollup";',
   external: [
-    ...builtins,
-    'text-encoding',
     path.resolve(pkg.module),
     'chai',
     'mocha',
     'sinon',
   ],
-  globals: Object.assign(globals, {
-    'text-encoding': 'encoding',
+  globals: {
     [path.resolve(pkg.module)]: 'Planck',
     'chai': 'chai',
     'mocha': 'mocha',
     'sinon': 'sinon',
-  }),
+  },
   targets: [
     {
       format: 'iife',
-      dest: './dist/test/unit.js',
+      dest: './dist/test/unit/rollup.js',
     },
   ],
 }

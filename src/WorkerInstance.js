@@ -25,9 +25,14 @@
 /* eslint-disable no-console */
 
 import Environment from '@takram/planck-core/src/Environment'
-import FilePath from '@takram/planck-core/src/FilePath'
 import Namespace from '@takram/planck-core/src/Namespace'
-import Transferral from '@takram/planck-core/src/Transferral'
+
+class Transferable {
+  constructor(message, list = []) {
+    this.message = message
+    this.list = list
+  }
+}
 
 export const internal = Namespace('WorkerInstance')
 
@@ -39,46 +44,43 @@ export default class WorkerInstance {
 
   start() {
     if (Environment.type !== 'worker') {
-      throw new Error()
+      throw new Error('Attempt to start worker instance on non-worker')
     }
     const scope = internal(this)
-    Environment.self.importScripts(...this.constructor.imports.map(path => {
-      return FilePath.resolve(path)
-    }))
-    Environment.self.addEventListener('message', scope.handleMessage, false)
+    self.addEventListener('message', scope.handleMessage, false)
     console.log(`${this.constructor.name} started`)
   }
 
   stop() {
     const scope = internal(this)
-    Environment.self.removeEventListener('message', scope.handleMessage, false)
+    self.removeEventListener('message', scope.handleMessage, false)
     console.log(`${this.constructor.name} stopped`)
   }
 
-  post(uuid, result) {
-    Environment.self.postMessage({ uuid, result })
+  transfer(message, list = []) {
+    throw new Transferable(message, list)
   }
 
-  transfer(uuid, result) {
-    if (result === undefined) {
-      Environment.self.postMessage({ uuid })
-    } else {
-      const buffer = Transferral.encode(result)
-      Environment.self.postMessage({ uuid, result: buffer }, [buffer])
-    }
-  }
-
-  handleMessage(event) {
+  async handleMessage(event) {
     const { property, uuid, args } = event.data
-    if (typeof this[property] === 'function') {
-      this[property](uuid, ...args)
-    } else {
-      throw new Error(`Function was not found for "${property}"`)
+    let result
+    try {
+      result = await Promise.resolve(this[property](...args))
+    } catch (data) {
+      if (data instanceof Transferable) {
+        result = data
+      } else {
+        // Post the error message to the caller to tell the work failed, and
+        // rethrow it to see the error in console.
+        self.postMessage({ uuid, error: (data.message || data) })
+        throw data
+      }
     }
-  }
-
-  static get imports() {
-    return []
+    if (result instanceof Transferable) {
+      self.postMessage({ uuid, result: result.message }, result.list)
+    } else {
+      self.postMessage({ uuid, result })
+    }
   }
 
   static register() {
@@ -86,9 +88,9 @@ export default class WorkerInstance {
       if (event.data === this.name) {
         const instance = new this()
         instance.start()
-        Environment.self.removeEventListener('message', handler, false)
+        self.removeEventListener('message', handler, false)
       }
     }
-    Environment.self.addEventListener('message', handler, false)
+    self.addEventListener('message', handler, false)
   }
 }
