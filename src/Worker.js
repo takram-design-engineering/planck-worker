@@ -37,7 +37,11 @@ function handleApply(property, uuid, ...args) {
       if (event.data.uuid !== uuid) {
         return
       }
-      resolve(this.constructor.transform(event.data.result, property))
+      if (event.data.error) {
+        reject(event.data.error)
+      } else {
+        resolve(this.constructor.transform(event.data.result, property))
+      }
       worker.removeEventListener('message', callback, false)
       --scope.running
       if (scope.running < 0) {
