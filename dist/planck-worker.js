@@ -404,6 +404,35 @@ function UUID() {
   return index.v4();
 }
 
+var asyncToGenerator = function (fn) {
+  return function () {
+    var gen = fn.apply(this, arguments);
+    return new Promise(function (resolve, reject) {
+      function step(key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        if (info.done) {
+          resolve(value);
+        } else {
+          return Promise.resolve(value).then(function (value) {
+            step("next", value);
+          }, function (err) {
+            step("throw", err);
+          });
+        }
+      }
+
+      return step("next");
+    });
+  };
+};
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -518,7 +547,11 @@ function handleApply(property, uuid) {
       if (event.data.uuid !== uuid) {
         return;
       }
-      resolve(_this.constructor.transform(event.data.result, property));
+      if (event.data.error) {
+        reject(event.data.error);
+      } else {
+        resolve(_this.constructor.transform(event.data.result, property));
+      }
       worker.removeEventListener('message', callback, false);
       --scope.running;
       if (scope.running < 0) {
@@ -690,53 +723,6 @@ var base64Arraybuffer = createCommonjsModule(function (module, exports) {
 
 var encoding = Environment.external('text-encoding');
 
-var Transferral = {
-  encode: function encode(object) {
-    var TextEncoder = Environment.self.TextEncoder || encoding.TextEncoder;
-    if (TextEncoder === undefined) {
-      throw new Error('TextEncoder is missing');
-    }
-    var encoder = new TextEncoder();
-    var text = JSON.stringify(object);
-    var array = encoder.encode(text);
-    return array.buffer;
-  },
-  decode: function decode(buffer) {
-    var TextDecoder = Environment.self.TextDecoder || encoding.TextDecoder;
-    if (TextDecoder === undefined) {
-      throw new Error('TextDecoder is missing');
-    }
-    var decoder = new TextDecoder();
-    var view = new DataView(buffer);
-    var text = decoder.decode(view);
-    return JSON.parse(text);
-  },
-  pack: function pack(buffer) {
-    return base64Arraybuffer.encode(buffer);
-  },
-  unpack: function unpack(string) {
-    return base64Arraybuffer.decode(string);
-  },
-  packBufferGeometry: function packBufferGeometry(geometry) {
-    var _this = this;
-
-    Object.values(geometry.data.attributes).forEach(function (attribute) {
-      var constructor = Environment.self[attribute.type];
-      var buffer = new constructor(attribute.array).buffer;
-      attribute.array = _this.pack(buffer);
-    });
-  },
-  unpackBufferGeometry: function unpackBufferGeometry(geometry) {
-    var _this2 = this;
-
-    Object.values(geometry.data.attributes).forEach(function (attribute) {
-      var constructor = Environment.self[attribute.type];
-      var buffer = _this2.unpack(attribute.array);
-      attribute.array = Array.from(new constructor(buffer));
-    });
-  }
-};
-
 //
 //  The MIT License
 //
@@ -763,6 +749,14 @@ var Transferral = {
 
 /* eslint-disable no-console */
 
+var Transferable = function Transferable(message) {
+  var list = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  classCallCheck(this, Transferable);
+
+  this.message = message;
+  this.list = list;
+};
+
 var internal$1 = Namespace('WorkerInstance');
 
 var WorkerInstance = function () {
@@ -776,54 +770,88 @@ var WorkerInstance = function () {
   createClass(WorkerInstance, [{
     key: 'start',
     value: function start() {
-      var _Environment$self;
-
       if (Environment.type !== 'worker') {
-        throw new Error();
+        throw new Error('Attempt to start worker instance on non-worker');
       }
       var scope = internal$1(this);
-      (_Environment$self = Environment.self).importScripts.apply(_Environment$self, toConsumableArray(this.constructor.imports.map(function (path) {
-        return FilePath.resolve(path);
-      })));
-      Environment.self.addEventListener('message', scope.handleMessage, false);
+      self.addEventListener('message', scope.handleMessage, false);
       console.log(this.constructor.name + ' started');
     }
   }, {
     key: 'stop',
     value: function stop() {
       var scope = internal$1(this);
-      Environment.self.removeEventListener('message', scope.handleMessage, false);
+      self.removeEventListener('message', scope.handleMessage, false);
       console.log(this.constructor.name + ' stopped');
     }
   }, {
-    key: 'post',
-    value: function post(uuid, result) {
-      Environment.self.postMessage({ uuid: uuid, result: result });
-    }
-  }, {
     key: 'transfer',
-    value: function transfer(uuid, result) {
-      if (result === undefined) {
-        Environment.self.postMessage({ uuid: uuid });
-      } else {
-        var buffer = Transferral.encode(result);
-        Environment.self.postMessage({ uuid: uuid, result: buffer }, [buffer]);
-      }
+    value: function transfer(message) {
+      var list = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+      throw new Transferable(message, list);
     }
   }, {
     key: 'handleMessage',
-    value: function handleMessage(event) {
-      var _event$data = event.data,
-          property = _event$data.property,
-          uuid = _event$data.uuid,
-          args = _event$data.args;
+    value: function () {
+      var _ref = asyncToGenerator(regeneratorRuntime.mark(function _callee(event) {
+        var _event$data, property, uuid, args, result;
 
-      if (typeof this[property] === 'function') {
-        this[property].apply(this, [uuid].concat(toConsumableArray(args)));
-      } else {
-        throw new Error('Function was not found for "' + property + '"');
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _event$data = event.data, property = _event$data.property, uuid = _event$data.uuid, args = _event$data.args;
+                result = void 0;
+                _context.prev = 2;
+                _context.next = 5;
+                return Promise.resolve(this[property].apply(this, toConsumableArray(args)));
+
+              case 5:
+                result = _context.sent;
+                _context.next = 16;
+                break;
+
+              case 8:
+                _context.prev = 8;
+                _context.t0 = _context['catch'](2);
+
+                if (!(_context.t0 instanceof Transferable)) {
+                  _context.next = 14;
+                  break;
+                }
+
+                result = _context.t0;
+                _context.next = 16;
+                break;
+
+              case 14:
+                // Post the error message to the caller to tell the work failed, and
+                // rethrow it to see the error in console.
+                self.postMessage({ uuid: uuid, error: _context.t0.message || _context.t0 });
+                throw _context.t0;
+
+              case 16:
+                if (result instanceof Transferable) {
+                  self.postMessage({ uuid: uuid, result: result.message }, result.list);
+                } else {
+                  self.postMessage({ uuid: uuid, result: result });
+                }
+
+              case 17:
+              case 'end':
+                return _context.stop();
+            }
+          }
+        }, _callee, this, [[2, 8]]);
+      }));
+
+      function handleMessage(_x3) {
+        return _ref.apply(this, arguments);
       }
-    }
+
+      return handleMessage;
+    }()
   }], [{
     key: 'register',
     value: function register() {
@@ -833,15 +861,10 @@ var WorkerInstance = function () {
         if (event.data === _this.name) {
           var instance = new _this();
           instance.start();
-          Environment.self.removeEventListener('message', handler, false);
+          self.removeEventListener('message', handler, false);
         }
       };
-      Environment.self.addEventListener('message', handler, false);
-    }
-  }, {
-    key: 'imports',
-    get: function get$$1() {
-      return [];
+      self.addEventListener('message', handler, false);
     }
   }]);
   return WorkerInstance;
