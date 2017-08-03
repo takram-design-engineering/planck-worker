@@ -28,63 +28,510 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 
-function _external(id) {
-  if (process.browser) {
-    return {};
-    // eslint-disable-next-line no-else-return
-  } else {
-    if (Environment.type !== 'node') {
-      return {};
+var environmentType = function () {
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === window')()) {
+      return 'browser';
     }
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    return require(id);
-  }
+  } catch (error) {}
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === self')()) {
+      return 'worker';
+    }
+  } catch (error) {}
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === global')()) {
+      return 'node';
+    }
+  } catch (error) {}
+  return undefined;
+}();
+
+var environmentSelf = void 0;
+switch (environmentType) {
+  case 'browser':
+    environmentSelf = window;
+    break;
+  case 'worker':
+    environmentSelf = self;
+    break;
+  case 'node':
+    environmentSelf = global;
+    break;
+  default:
+    break;
 }
 
 var Environment = {
-  get type() {
-    try {
-      // eslint-disable-next-line no-new-func
-      if (new Function('return this === window')()) {
-        return 'browser';
-      }
-    } catch (error) {}
-    try {
-      // eslint-disable-next-line no-new-func
-      if (new Function('return this === self')()) {
-        return 'worker';
-      }
-    } catch (error) {}
-    try {
-      // eslint-disable-next-line no-new-func
-      if (new Function('return this === global')()) {
-        return 'node';
-      }
-    } catch (error) {}
-    throw new Error();
-  },
+  type: environmentType,
+  self: environmentSelf
+};
 
-  get self() {
-    switch (this.type) {
-      case 'browser':
-        return window;
-      case 'worker':
-        return self;
-      case 'node':
-        return global;
-      default:
+var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+
+
+
+
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
+var index = createCommonjsModule(function (module, exports) {
+  // Copyright Joyent, Inc. and other Node contributors.
+  //
+  // Permission is hereby granted, free of charge, to any person obtaining a
+  // copy of this software and associated documentation files (the
+  // "Software"), to deal in the Software without restriction, including
+  // without limitation the rights to use, copy, modify, merge, publish,
+  // distribute, sublicense, and/or sell copies of the Software, and to permit
+  // persons to whom the Software is furnished to do so, subject to the
+  // following conditions:
+  //
+  // The above copyright notice and this permission notice shall be included
+  // in all copies or substantial portions of the Software.
+  //
+  // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+  // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+  // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+  // USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+  // resolves . and .. elements in a path array with directory names there
+  // must be no slashes, empty elements, or device names (c:\) in the array
+  // (so also no leading and trailing slashes - it does not distinguish
+  // relative and absolute paths)
+  function normalizeArray(parts, allowAboveRoot) {
+    // if the path tries to go above the root, `up` ends up > 0
+    var up = 0;
+    for (var i = parts.length - 1; i >= 0; i--) {
+      var last = parts[i];
+      if (last === '.') {
+        parts.splice(i, 1);
+      } else if (last === '..') {
+        parts.splice(i, 1);
+        up++;
+      } else if (up) {
+        parts.splice(i, 1);
+        up--;
+      }
+    }
+
+    // if the path is allowed to go above the root, restore leading ..s
+    if (allowAboveRoot) {
+      for (; up--; up) {
+        parts.unshift('..');
+      }
+    }
+
+    return parts;
+  }
+
+  // Split a filename into [root, dir, basename, ext], unix version
+  // 'root' is just a slash, or nothing.
+  var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+  var splitPath = function splitPath(filename) {
+    return splitPathRe.exec(filename).slice(1);
+  };
+
+  // path.resolve([from ...], to)
+  // posix version
+  exports.resolve = function () {
+    var resolvedPath = '',
+        resolvedAbsolute = false;
+
+    for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+      var path = i >= 0 ? arguments[i] : process.cwd();
+
+      // Skip empty and invalid entries
+      if (typeof path !== 'string') {
+        throw new TypeError('Arguments to path.resolve must be strings');
+      } else if (!path) {
+        continue;
+      }
+
+      resolvedPath = path + '/' + resolvedPath;
+      resolvedAbsolute = path.charAt(0) === '/';
+    }
+
+    // At this point the path should be resolved to a full absolute path, but
+    // handle relative paths to be safe (might happen when process.cwd() fails)
+
+    // Normalize the path
+    resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function (p) {
+      return !!p;
+    }), !resolvedAbsolute).join('/');
+
+    return (resolvedAbsolute ? '/' : '') + resolvedPath || '.';
+  };
+
+  // path.normalize(path)
+  // posix version
+  exports.normalize = function (path) {
+    var isAbsolute = exports.isAbsolute(path),
+        trailingSlash = substr(path, -1) === '/';
+
+    // Normalize the path
+    path = normalizeArray(filter(path.split('/'), function (p) {
+      return !!p;
+    }), !isAbsolute).join('/');
+
+    if (!path && !isAbsolute) {
+      path = '.';
+    }
+    if (path && trailingSlash) {
+      path += '/';
+    }
+
+    return (isAbsolute ? '/' : '') + path;
+  };
+
+  // posix version
+  exports.isAbsolute = function (path) {
+    return path.charAt(0) === '/';
+  };
+
+  // posix version
+  exports.join = function () {
+    var paths = Array.prototype.slice.call(arguments, 0);
+    return exports.normalize(filter(paths, function (p, index) {
+      if (typeof p !== 'string') {
+        throw new TypeError('Arguments to path.join must be strings');
+      }
+      return p;
+    }).join('/'));
+  };
+
+  // path.relative(from, to)
+  // posix version
+  exports.relative = function (from, to) {
+    from = exports.resolve(from).substr(1);
+    to = exports.resolve(to).substr(1);
+
+    function trim(arr) {
+      var start = 0;
+      for (; start < arr.length; start++) {
+        if (arr[start] !== '') break;
+      }
+
+      var end = arr.length - 1;
+      for (; end >= 0; end--) {
+        if (arr[end] !== '') break;
+      }
+
+      if (start > end) return [];
+      return arr.slice(start, end - start + 1);
+    }
+
+    var fromParts = trim(from.split('/'));
+    var toParts = trim(to.split('/'));
+
+    var length = Math.min(fromParts.length, toParts.length);
+    var samePartsLength = length;
+    for (var i = 0; i < length; i++) {
+      if (fromParts[i] !== toParts[i]) {
+        samePartsLength = i;
         break;
+      }
     }
-    throw new Error();
-  },
 
-  external: function external(id) {
-    try {
-      return _external(id);
-    } catch (e) {
-      Environment.self.process = { browser: true };
+    var outputParts = [];
+    for (var i = samePartsLength; i < fromParts.length; i++) {
+      outputParts.push('..');
     }
-    return _external(id);
+
+    outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+    return outputParts.join('/');
+  };
+
+  exports.sep = '/';
+  exports.delimiter = ':';
+
+  exports.dirname = function (path) {
+    var result = splitPath(path),
+        root = result[0],
+        dir = result[1];
+
+    if (!root && !dir) {
+      // No dirname whatsoever
+      return '.';
+    }
+
+    if (dir) {
+      // It has a dirname, strip trailing slash
+      dir = dir.substr(0, dir.length - 1);
+    }
+
+    return root + dir;
+  };
+
+  exports.basename = function (path, ext) {
+    var f = splitPath(path)[2];
+    // TODO: make this comparison case-insensitive on windows?
+    if (ext && f.substr(-1 * ext.length) === ext) {
+      f = f.substr(0, f.length - ext.length);
+    }
+    return f;
+  };
+
+  exports.extname = function (path) {
+    return splitPath(path)[3];
+  };
+
+  function filter(xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+      if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+  }
+
+  // String.prototype.substr - negative index don't work in IE8
+  var substr = 'ab'.substr(-1) === 'b' ? function (str, start, len) {
+    return str.substr(start, len);
+  } : function (str, start, len) {
+    if (start < 0) start = str.length + start;
+    return str.substr(start, len);
+  };
+});
+
+//
+//  The MIT License
+//
+//  Copyright (C) 2016-Present Shota Matsuda
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a
+//  copy of this software and associated documentation files (the "Software"),
+//  to deal in the Software without restriction, including without limitation
+//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+//  and/or sell copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
+//
+
+function branchingImport(arg) {
+  // Assuming `process.browser` is defined via DefinePlugin on webpack, this
+  // conditional will be determined at transpilation time, and `else` block will
+  // be completely removed in order to prevent webpack from bundling module.
+  var name = void 0;
+  var id = void 0;
+  if (typeof arg === 'string') {
+    id = arg;
+    name = arg;
+  } else {
+    id = Object.keys(arg)[0];
+    name = arg[id];
+  }
+  if (process.browser) {
+    return Environment.self[name];
+    // eslint-disable-next-line no-else-return
+  } else {
+    if (Environment.type !== 'node') {
+      return undefined;
+    }
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      return require(id);
+    } catch (error) {}
+    return undefined;
+  }
+}
+
+function runtimeImport(id) {
+  // This will throw error on browser, in which `process` is typically not
+  // defined in the global scope. Re-importing after defining `process.browser`
+  // in the global scope will evaluate the conditional in `branchingImport` for
+  // rollup's bundles.
+  try {
+    return branchingImport(id);
+  } catch (e) {
+    Environment.self.process = {
+      browser: Environment.type !== 'node'
+    };
+  }
+  return branchingImport(id);
+}
+
+function importOptional(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    return {};
+  }
+  return module;
+}
+
+function importRequired(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type === 'node') {
+      throw new Error('Could not resolve module "' + id + '"');
+    } else {
+      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
+    }
+  }
+  return module;
+}
+
+function importNode(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type === 'node') {
+      throw new Error('Could not resolve module "' + id + '"');
+    }
+    return {};
+  }
+  return module;
+}
+
+function importBrowser(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type !== 'node') {
+      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
+    }
+    return {};
+  }
+  return module;
+}
+
+var External = {
+  optional: importOptional,
+  required: importRequired,
+  browser: importBrowser,
+  node: importNode
+};
+
+var asyncToGenerator = function (fn) {
+  return function () {
+    var gen = fn.apply(this, arguments);
+    return new Promise(function (resolve, reject) {
+      function step(key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        if (info.done) {
+          resolve(value);
+        } else {
+          return Promise.resolve(value).then(function (value) {
+            step("next", value);
+          }, function (err) {
+            step("throw", err);
+          });
+        }
+      }
+
+      return step("next");
+    });
+  };
+};
+
+var classCallCheck = function (instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
+
+var createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) defineProperties(Constructor, staticProps);
+    return Constructor;
+  };
+}();
+
+
+
+
+
+
+
+var _extends = Object.assign || function (target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i];
+
+    for (var key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        target[key] = source[key];
+      }
+    }
+  }
+
+  return target;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
   }
 };
 
@@ -112,16 +559,15 @@ var Environment = {
 //  DEALINGS IN THE SOFTWARE.
 //
 
+var nodePath = External.node('path');
+
 function currentScriptPath() {
   switch (Environment.type) {
     case 'browser':
       {
         // eslint-disable-next-line no-underscore-dangle
         var currentScript = document.currentScript || document._currentScript;
-        if (!currentScript) {
-          return null;
-        }
-        return currentScript.src;
+        return currentScript && currentScript.src || undefined;
       }
     case 'worker':
       return self.location.href;
@@ -130,20 +576,54 @@ function currentScriptPath() {
     default:
       break;
   }
-  throw new Error();
+  return undefined;
 }
 
 var initialScriptPath = currentScriptPath();
 
-var FilePath = {
-  get self() {
-    return initialScriptPath;
-  },
+var aliases = void 0;
+if (Environment.type === 'node') {
+  aliases = {
+    resolve: nodePath.resolve,
+    normalize: nodePath.normalize,
+    join: nodePath.join,
+    relative: nodePath.relative,
+    dirname: nodePath.dirname,
+    basename: nodePath.basename,
+    extname: nodePath.extname,
+    separator: nodePath.sep,
+    delimiter: nodePath.delimiter
+  };
+} else {
+  aliases = {
+    resolve: function resolve() {
+      for (var _len = arguments.length, paths = Array(_len), _key = 0; _key < _len; _key++) {
+        paths[_key] = arguments[_key];
+      }
+
+      return index.resolve.apply(index, ['/'].concat(paths));
+    },
+
+
+    normalize: index.normalize,
+    join: index.join,
+    relative: index.relative,
+    dirname: index.dirname,
+    basename: index.basename,
+    extname: index.extname,
+    separator: index.sep,
+    delimiter: index.delimiter
+  };
+}
+
+var FilePath = _extends({
+  self: initialScriptPath,
 
   get current() {
     return currentScriptPath();
   }
-};
+
+}, aliases);
 
 //
 //  The MIT License
@@ -183,16 +663,6 @@ function Namespace() {
     }
     return object[symbol];
   };
-}
-
-var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-
-
-
-
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
 // Unique ID creation requires a high quality random # generator.  In the
@@ -373,7 +843,7 @@ var uuid = v4_1;
 uuid.v1 = v1_1;
 uuid.v4 = v4_1;
 
-var index = uuid;
+var index$1 = uuid;
 
 //
 //  The MIT License
@@ -401,111 +871,8 @@ var index = uuid;
 
 // Just use uuid v4 for now
 function UUID() {
-  return index.v4();
+  return index$1.v4();
 }
-
-var asyncToGenerator = function (fn) {
-  return function () {
-    var gen = fn.apply(this, arguments);
-    return new Promise(function (resolve, reject) {
-      function step(key, arg) {
-        try {
-          var info = gen[key](arg);
-          var value = info.value;
-        } catch (error) {
-          reject(error);
-          return;
-        }
-
-        if (info.done) {
-          resolve(value);
-        } else {
-          return Promise.resolve(value).then(function (value) {
-            step("next", value);
-          }, function (err) {
-            step("throw", err);
-          });
-        }
-      }
-
-      return step("next");
-    });
-  };
-};
-
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var toConsumableArray = function (arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  } else {
-    return Array.from(arr);
-  }
-};
 
 //
 //  The MIT License
@@ -619,109 +986,6 @@ var Worker = function () {
   }]);
   return Worker;
 }();
-
-var base64Arraybuffer = createCommonjsModule(function (module, exports) {
-  /*
-   * base64-arraybuffer
-   * https://github.com/niklasvh/base64-arraybuffer
-   *
-   * Copyright (c) 2012 Niklas von Hertzen
-   * Licensed under the MIT license.
-   */
-  (function () {
-    "use strict";
-
-    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    // Use a lookup table to find the index.
-    var lookup = new Uint8Array(256);
-    for (var i = 0; i < chars.length; i++) {
-      lookup[chars.charCodeAt(i)] = i;
-    }
-
-    exports.encode = function (arraybuffer) {
-      var bytes = new Uint8Array(arraybuffer),
-          i,
-          len = bytes.length,
-          base64 = "";
-
-      for (i = 0; i < len; i += 3) {
-        base64 += chars[bytes[i] >> 2];
-        base64 += chars[(bytes[i] & 3) << 4 | bytes[i + 1] >> 4];
-        base64 += chars[(bytes[i + 1] & 15) << 2 | bytes[i + 2] >> 6];
-        base64 += chars[bytes[i + 2] & 63];
-      }
-
-      if (len % 3 === 2) {
-        base64 = base64.substring(0, base64.length - 1) + "=";
-      } else if (len % 3 === 1) {
-        base64 = base64.substring(0, base64.length - 2) + "==";
-      }
-
-      return base64;
-    };
-
-    exports.decode = function (base64) {
-      var bufferLength = base64.length * 0.75,
-          len = base64.length,
-          i,
-          p = 0,
-          encoded1,
-          encoded2,
-          encoded3,
-          encoded4;
-
-      if (base64[base64.length - 1] === "=") {
-        bufferLength--;
-        if (base64[base64.length - 2] === "=") {
-          bufferLength--;
-        }
-      }
-
-      var arraybuffer = new ArrayBuffer(bufferLength),
-          bytes = new Uint8Array(arraybuffer);
-
-      for (i = 0; i < len; i += 4) {
-        encoded1 = lookup[base64.charCodeAt(i)];
-        encoded2 = lookup[base64.charCodeAt(i + 1)];
-        encoded3 = lookup[base64.charCodeAt(i + 2)];
-        encoded4 = lookup[base64.charCodeAt(i + 3)];
-
-        bytes[p++] = encoded1 << 2 | encoded2 >> 4;
-        bytes[p++] = (encoded2 & 15) << 4 | encoded3 >> 2;
-        bytes[p++] = (encoded3 & 3) << 6 | encoded4 & 63;
-      }
-
-      return arraybuffer;
-    };
-  })();
-});
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-var encoding = Environment.external('text-encoding');
 
 //
 //  The MIT License
