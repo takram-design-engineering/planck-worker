@@ -4,6 +4,7 @@
   "description": "",
   "repository": "takram-design-engineering/planck-worker",
   "main": "dist/planck-worker.js",
+  "browser": "dist/planck-worker.js",
   "module": "dist/planck-worker.module.js",
   "author": "Shota Matsuda",
   "license": "MIT",
