@@ -30,7 +30,7 @@ export default {
   entry: './test/fixture.js',
   sourceMap: true,
   plugins: [
-    nodeResolve({ main: true, module: true, browser: true }),
+    nodeResolve({ browser: true }),
     commonjs(),
     babel({
       presets: [

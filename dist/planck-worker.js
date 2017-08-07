@@ -870,9 +870,7 @@ var index$1 = uuid;
 //
 
 // Just use uuid v4 for now
-function UUID() {
-  return index$1.v4();
-}
+var UUID = index$1.v4;
 
 //
 //  The MIT License

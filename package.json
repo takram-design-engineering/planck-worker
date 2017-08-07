@@ -1,9 +1,10 @@
 {
   "name": "@takram/planck-worker",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "",
   "repository": "takram-design-engineering/planck-worker",
   "main": "dist/planck-worker.js",
+  "browser": "dist/planck-worker.js",
   "module": "dist/planck-worker.module.js",
   "author": "Shota Matsuda",
   "license": "MIT",
@@ -34,7 +35,7 @@
     "serve": "browser-sync start --server . --files dist --startPath test --no-notify"
   },
   "dependencies": {
-    "@takram/planck-core": "^0.2.0",
+    "@takram/planck-core": "^0.2.1",
     "babel-polyfill": "^6.23.0"
   },
   "devDependencies": {
@@ -48,7 +49,7 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-preset-stage-3": "^6.24.1",
     "browser-sync": "^2.18.13",
-    "chai": "^4.1.0",
+    "chai": "^4.1.1",
     "chai-as-promised": "^7.1.1",
     "chalk": "^2.0.1",
     "eslint": "^3.19.0",
