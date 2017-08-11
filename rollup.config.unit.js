@@ -54,13 +54,11 @@ export default {
     path.resolve(pkg.browser),
     'chai',
     'mocha',
-    'sinon',
   ],
   globals: {
     [path.resolve(pkg.browser)]: 'Planck',
     'chai': 'chai',
     'mocha': 'mocha',
-    'sinon': 'sinon',
   },
   targets: [
     {
