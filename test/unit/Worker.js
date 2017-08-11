@@ -84,8 +84,8 @@ describe('Worker', function () {
       expect(worker.error(expected2)).rejected,
     ]).then(errors => {
       const [error1, error2] = errors
-      expect(error1).equal(expected1)
-      expect(error2).equal(expected2)
+      expect(error1.message).equal(expected1)
+      expect(error2.message).equal(expected2)
     })
   })
 
