@@ -50,6 +50,7 @@ export default {
   ],
   intro: 'var BUNDLER = "rollup";',
   external: [
+    'source-map-support/register',
     path.resolve(pkg.browser),
     'chai',
     'mocha',

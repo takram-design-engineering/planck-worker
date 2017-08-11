@@ -38,7 +38,7 @@ function handleApply(property, uuid, ...args) {
         return
       }
       if (event.data.error) {
-        reject(event.data.error)
+        reject(new Error(event.data.error))
       } else {
         resolve(this.constructor.transform(event.data.result, property))
       }

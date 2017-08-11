@@ -659,6 +659,7 @@ function Namespace() {
     };
 
     if (object[symbol] === undefined) {
+      // eslint-disable-next-line no-param-reassign
       object[symbol] = init({});
     }
     return object[symbol];
@@ -913,7 +914,7 @@ function handleApply(property, uuid) {
         return;
       }
       if (event.data.error) {
-        reject(event.data.error);
+        reject(new Error(event.data.error));
       } else {
         resolve(_this.constructor.transform(event.data.result, property));
       }
