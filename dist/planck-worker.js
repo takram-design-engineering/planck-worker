@@ -1057,7 +1057,7 @@ var WorkerInstance = function () {
   }, {
     key: 'handleMessage',
     value: function () {
-      var _ref = asyncToGenerator(regeneratorRuntime.mark(function _callee(event) {
+      var _ref = asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(event) {
         var _event$data, property, uuid, args, result;
 
         return regeneratorRuntime.wrap(function _callee$(_context) {
