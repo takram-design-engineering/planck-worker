@@ -80,7 +80,7 @@ function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
-var index = createCommonjsModule(function (module, exports) {
+var pathBrowserify = createCommonjsModule(function (module, exports) {
   // Copyright Joyent, Inc. and other Node contributors.
   //
   // Permission is hereby granted, free of charge, to any person obtaining a
@@ -601,18 +601,18 @@ if (Environment.type === 'node') {
         paths[_key] = arguments[_key];
       }
 
-      return index.resolve.apply(index, ['/'].concat(paths));
+      return pathBrowserify.resolve.apply(pathBrowserify, ['/'].concat(paths));
     },
 
 
-    normalize: index.normalize,
-    join: index.join,
-    relative: index.relative,
-    dirname: index.dirname,
-    basename: index.basename,
-    extname: index.extname,
-    separator: index.sep,
-    delimiter: index.delimiter
+    normalize: pathBrowserify.normalize,
+    join: pathBrowserify.join,
+    relative: pathBrowserify.relative,
+    dirname: pathBrowserify.dirname,
+    basename: pathBrowserify.basename,
+    extname: pathBrowserify.extname,
+    separator: pathBrowserify.sep,
+    delimiter: pathBrowserify.delimiter
   };
 }
 
@@ -844,7 +844,7 @@ var uuid = v4_1;
 uuid.v1 = v1_1;
 uuid.v4 = v4_1;
 
-var index$1 = uuid;
+var uuid_1 = uuid;
 
 //
 //  The MIT License
@@ -871,7 +871,7 @@ var index$1 = uuid;
 //
 
 // Just use uuid v4 for now
-var UUID = index$1.v4;
+var UUID = uuid_1.v4;
 
 //
 //  The MIT License
