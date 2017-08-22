@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@takram/eslint-config-planck": "^0.2.1",
-    "@takram/planck-core": "^0.2.2",
+    "@takram/planck-core": "^0.2.3",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-plugin-external-helpers": "^6.22.0",
