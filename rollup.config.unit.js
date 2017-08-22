@@ -30,8 +30,8 @@ import path from 'path'
 const pkg = require('./package.json')
 
 export default {
-  entry: './test/unit.js',
-  sourceMap: true,
+  input: './test/unit.js',
+  sourcemap: true,
   plugins: [
     nodeResolve({ browser: true }),
     commonjs(),
@@ -54,18 +54,16 @@ export default {
     path.resolve(pkg.browser),
     'chai',
     'mocha',
-    'sinon',
   ],
   globals: {
     [path.resolve(pkg.browser)]: 'Planck',
     'chai': 'chai',
     'mocha': 'mocha',
-    'sinon': 'sinon',
   },
-  targets: [
+  output: [
     {
       format: 'iife',
-      dest: './dist/test/unit/rollup.js',
+      file: './dist/test/unit/rollup.js',
     },
   ],
 }

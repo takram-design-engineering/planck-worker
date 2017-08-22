@@ -40,7 +40,6 @@ module.exports = {
     'source-map-support/register': 'null',
     'chai': 'chai',
     'mocha': 'mocha',
-    'sinon': 'sinon',
   },
   module: {
     rules: [
