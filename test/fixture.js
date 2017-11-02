@@ -22,12 +22,15 @@
 //  DEALINGS IN THE SOFTWARE.
 //
 
+/* global Planck */
+/* eslint-disable no-restricted-globals */
+
 self.importScripts(
   '/node_modules/babel-polyfill/dist/polyfill.js',
   '/dist/planck-worker.js',
 )
 
-const { WorkerInstance } = self.Planck
+const { WorkerInstance } = Planck
 
 class TestWorkerInstance extends WorkerInstance {
   echo(arg) {
@@ -47,7 +50,7 @@ class TestWorkerInstance extends WorkerInstance {
   }
 
   transfer(array) {
-    const buffer = new Float32Array(array).buffer
+    const { buffer } = new Float32Array(array)
     super.transfer(buffer, [buffer])
   }
 }

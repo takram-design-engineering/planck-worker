@@ -27,7 +27,7 @@ import chaiAsPromised from 'chai-as-promised'
 
 import { Worker } from '../..'
 
-const expect = chai.expect
+const { expect } = chai
 chai.use(chaiAsPromised)
 
 // eslint-disable-next-line func-names

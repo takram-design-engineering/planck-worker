@@ -32,7 +32,7 @@ export const internal = Namespace('Worker')
 function handleApply(property, uuid, ...args) {
   return new Promise((resolve, reject) => {
     const scope = internal(this)
-    const worker = scope.worker
+    const { worker } = scope.worker
     const callback = event => {
       if (event.data.uuid !== uuid) {
         return

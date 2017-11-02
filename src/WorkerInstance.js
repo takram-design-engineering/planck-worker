@@ -23,6 +23,7 @@
 //
 
 /* eslint-disable no-console */
+/* eslint-disable no-restricted-globals */
 
 import Environment from '@takram/planck-core/src/Environment'
 import Namespace from '@takram/planck-core/src/Namespace'
