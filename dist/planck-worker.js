@@ -56,6 +56,7 @@ switch (environmentType) {
     environmentSelf = window;
     break;
   case 'worker':
+    // eslint-disable-next-line no-restricted-globals
     environmentSelf = self;
     break;
   case 'node':
@@ -80,7 +81,7 @@ function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
-var pathBrowserify = createCommonjsModule(function (module, exports) {
+var index = createCommonjsModule(function (module, exports) {
   // Copyright Joyent, Inc. and other Node contributors.
   //
   // Permission is hereby granted, free of charge, to any person obtaining a
@@ -302,122 +303,6 @@ var pathBrowserify = createCommonjsModule(function (module, exports) {
   };
 });
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-function branchingImport(arg) {
-  // Assuming `process.browser` is defined via DefinePlugin on webpack, this
-  // conditional will be determined at transpilation time, and `else` block will
-  // be completely removed in order to prevent webpack from bundling module.
-  var name = void 0;
-  var id = void 0;
-  if (typeof arg === 'string') {
-    id = arg;
-    name = arg;
-  } else {
-    id = Object.keys(arg)[0];
-    name = arg[id];
-  }
-  if (process.browser) {
-    return Environment.self[name];
-    // eslint-disable-next-line no-else-return
-  } else {
-    if (Environment.type !== 'node') {
-      return undefined;
-    }
-    try {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      return require(id);
-    } catch (error) {}
-    return undefined;
-  }
-}
-
-function runtimeImport(id) {
-  // This will throw error on browser, in which `process` is typically not
-  // defined in the global scope. Re-importing after defining `process.browser`
-  // in the global scope will evaluate the conditional in `branchingImport` for
-  // rollup's bundles.
-  try {
-    return branchingImport(id);
-  } catch (e) {
-    Environment.self.process = {
-      browser: Environment.type !== 'node'
-    };
-  }
-  return branchingImport(id);
-}
-
-function importOptional(id) {
-  var module = runtimeImport(id);
-  if (module === undefined) {
-    return {};
-  }
-  return module;
-}
-
-function importRequired(id) {
-  var module = runtimeImport(id);
-  if (module === undefined) {
-    if (Environment.type === 'node') {
-      throw new Error('Could not resolve module "' + id + '"');
-    } else {
-      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
-    }
-  }
-  return module;
-}
-
-function importNode(id) {
-  var module = runtimeImport(id);
-  if (module === undefined) {
-    if (Environment.type === 'node') {
-      throw new Error('Could not resolve module "' + id + '"');
-    }
-    return {};
-  }
-  return module;
-}
-
-function importBrowser(id) {
-  var module = runtimeImport(id);
-  if (module === undefined) {
-    if (Environment.type !== 'node') {
-      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
-    }
-    return {};
-  }
-  return module;
-}
-
-var External = {
-  optional: importOptional,
-  required: importRequired,
-  browser: importBrowser,
-  node: importNode
-};
-
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -626,7 +511,43 @@ var _extends = Object.assign || function (target) {
 
 
 
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
 
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
 
 
 
@@ -674,6 +595,127 @@ var toConsumableArray = function (arr) {
 //  DEALINGS IN THE SOFTWARE.
 //
 
+function branchingImport(arg) {
+  // Assuming `process.browser` is defined via DefinePlugin on webpack, this
+  // conditional will be determined at transpilation time, and `else` block will
+  // be completely removed in order to prevent webpack from bundling module.
+  var name = void 0;
+  var id = void 0;
+  if (typeof arg === 'string') {
+    id = arg;
+    name = arg;
+  } else {
+    var _Object$keys = Object.keys(arg);
+
+    var _Object$keys2 = slicedToArray(_Object$keys, 1);
+
+    id = _Object$keys2[0];
+
+    name = arg[id];
+  }
+  if (process.browser) {
+    return Environment.self[name];
+    // eslint-disable-next-line no-else-return
+  } else {
+    if (Environment.type !== 'node') {
+      return undefined;
+    }
+    try {
+      // eslint-disable-next-line global-require, import/no-dynamic-require
+      return require(id);
+    } catch (error) {}
+    return undefined;
+  }
+}
+
+function runtimeImport(id) {
+  // This will throw error on browser, in which `process` is typically not
+  // defined in the global scope. Re-importing after defining `process.browser`
+  // in the global scope will evaluate the conditional in `branchingImport` for
+  // rollup's bundles.
+  try {
+    return branchingImport(id);
+  } catch (e) {
+    Environment.self.process = {
+      browser: Environment.type !== 'node'
+    };
+  }
+  return branchingImport(id);
+}
+
+function importOptional(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    return {};
+  }
+  return module;
+}
+
+function importRequired(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type === 'node') {
+      throw new Error('Could not resolve module "' + id + '"');
+    } else {
+      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
+    }
+  }
+  return module;
+}
+
+function importNode(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type === 'node') {
+      throw new Error('Could not resolve module "' + id + '"');
+    }
+    return {};
+  }
+  return module;
+}
+
+function importBrowser(id) {
+  var module = runtimeImport(id);
+  if (module === undefined) {
+    if (Environment.type !== 'node') {
+      throw new Error('"' + id + '" isn\u2019t defined in the global scope');
+    }
+    return {};
+  }
+  return module;
+}
+
+var External = {
+  optional: importOptional,
+  required: importRequired,
+  browser: importBrowser,
+  node: importNode
+};
+
+//
+//  The MIT License
+//
+//  Copyright (C) 2016-Present Shota Matsuda
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a
+//  copy of this software and associated documentation files (the "Software"),
+//  to deal in the Software without restriction, including without limitation
+//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+//  and/or sell copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//  DEALINGS IN THE SOFTWARE.
+//
+
 var nodePath = External.node('path');
 
 function currentScriptPath() {
@@ -685,6 +727,7 @@ function currentScriptPath() {
         return currentScript && currentScript.src || undefined;
       }
     case 'worker':
+      // eslint-disable-next-line no-restricted-globals
       return self.location.href;
     case 'node':
       return __filename;
@@ -716,18 +759,18 @@ if (Environment.type === 'node') {
         paths[_key] = arguments[_key];
       }
 
-      return pathBrowserify.resolve.apply(pathBrowserify, ['/'].concat(paths));
+      return index.resolve.apply(index, ['/'].concat(paths));
     },
 
 
-    normalize: pathBrowserify.normalize,
-    join: pathBrowserify.join,
-    relative: pathBrowserify.relative,
-    dirname: pathBrowserify.dirname,
-    basename: pathBrowserify.basename,
-    extname: pathBrowserify.extname,
-    separator: pathBrowserify.sep,
-    delimiter: pathBrowserify.delimiter
+    normalize: index.normalize,
+    join: index.join,
+    relative: index.relative,
+    dirname: index.dirname,
+    basename: index.basename,
+    extname: index.extname,
+    separator: index.sep,
+    delimiter: index.delimiter
   };
 }
 
@@ -959,7 +1002,7 @@ var uuid = v4_1;
 uuid.v1 = v1_1;
 uuid.v4 = v4_1;
 
-var uuid_1 = uuid;
+var index$1 = uuid;
 
 //
 //  The MIT License
@@ -986,7 +1029,7 @@ var uuid_1 = uuid;
 //
 
 // Just use uuid v4 for now
-var UUID = uuid_1.v4;
+var UUID = index$1.v4;
 
 //
 //  The MIT License
@@ -1023,7 +1066,8 @@ function handleApply(property, uuid) {
 
   return new Promise(function (resolve, reject) {
     var scope = internal(_this);
-    var worker = scope.worker;
+    var worker = scope.worker.worker;
+
     var callback = function callback(event) {
       if (event.data.uuid !== uuid) {
         return;
@@ -1126,6 +1170,7 @@ var Worker = function () {
 //
 
 /* eslint-disable no-console */
+/* eslint-disable no-restricted-globals */
 
 var Transferable = function Transferable(message) {
   var list = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
