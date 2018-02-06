@@ -4,7 +4,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-restricted-globals */
 
-import Environment from '@takram/planck-core/src/Environment'
+import Global from '@takram/planck-core/src/Global'
 import Namespace from '@takram/planck-core/src/Namespace'
 
 class Transferable {
@@ -23,7 +23,7 @@ export default class WorkerInstance {
   }
 
   start() {
-    if (Environment.type !== 'worker') {
+    if (!Global.isWorker) {
       throw new Error('Attempt to start worker instance on non-worker')
     }
     const scope = internal(this)
