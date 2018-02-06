@@ -4,82 +4,141 @@
 	(factory((global.Planck = global.Planck || {})));
 }(this, (function (exports) { 'use strict';
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-var environmentType = function () {
-  try {
-    // eslint-disable-next-line no-new-func
-    if (new Function('return this === window')()) {
-      return 'browser';
-    }
-  } catch (error) {}
-  try {
-    // eslint-disable-next-line no-new-func
-    if (new Function('return this === self')()) {
-      return 'worker';
-    }
-  } catch (error) {}
-  try {
-    // eslint-disable-next-line no-new-func
-    if (new Function('return this === global')()) {
-      return 'node';
-    }
-  } catch (error) {}
-  return undefined;
-}();
-
-var environmentSelf = void 0;
-switch (environmentType) {
-  case 'browser':
-    environmentSelf = window;
-    break;
-  case 'worker':
-    // eslint-disable-next-line no-restricted-globals
-    environmentSelf = self;
-    break;
-  case 'node':
-    environmentSelf = global;
-    break;
-  default:
-    break;
-}
-
-var Environment = {
-  type: environmentType,
-  self: environmentSelf
-};
-
-var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-
-
-
-
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
+
+var rngBrowser = createCommonjsModule(function (module) {
+  // Unique ID creation requires a high quality random # generator.  In the
+  // browser this is a little complicated due to unknown quality of Math.random()
+  // and inconsistent support for the `crypto` API.  We do the best we can via
+  // feature-detection
+
+  // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
+  var getRandomValues = typeof crypto != 'undefined' && crypto.getRandomValues.bind(crypto) || typeof msCrypto != 'undefined' && msCrypto.getRandomValues.bind(msCrypto);
+  if (getRandomValues) {
+    // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+    var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+    module.exports = function whatwgRNG() {
+      getRandomValues(rnds8);
+      return rnds8;
+    };
+  } else {
+    // Math.random()-based (RNG)
+    //
+    // If all else fails, use Math.random().  It's fast, but is of unspecified
+    // quality.
+    var rnds = new Array(16);
+
+    module.exports = function mathRNG() {
+      for (var i = 0, r; i < 16; i++) {
+        if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+        rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+      }
+
+      return rnds;
+    };
+  }
+});
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  return bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]];
+}
+
+var bytesToUuid_1 = bytesToUuid;
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof options == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rngBrowser)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = rnds[6] & 0x0f | 0x40;
+  rnds[8] = rnds[8] & 0x3f | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid_1(rnds);
+}
+
+var v4_1 = v4;
+
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
+
+var isBrowser = function () {
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === window')()) {
+      return true;
+    }
+  } catch (error) {}
+  return false;
+}();
+
+var isWorker = !isBrowser && function () {
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === self')()) {
+      return true;
+    }
+  } catch (error) {}
+  return false;
+}();
+
+var isNode = !isBrowser && !isWorker && function () {
+  try {
+    // eslint-disable-next-line no-new-func
+    if (new Function('return this === global')()) {
+      return true;
+    }
+  } catch (error) {}
+  return false;
+}();
+
+var globalScope = function () {
+  if (isBrowser) {
+    return window;
+  }
+  if (isWorker) {
+    // eslint-disable-next-line no-restricted-globals
+    return self;
+  }
+  if (isNode) {
+    return global;
+  }
+  return undefined;
+}();
+
+var Global = {
+  isBrowser: isBrowser,
+  isWorker: isWorker,
+  isNode: isNode,
+  scope: globalScope
+};
 
 var index = createCommonjsModule(function (module, exports) {
   // Copyright Joyent, Inc. and other Node contributors.
@@ -303,120 +362,16 @@ var index = createCommonjsModule(function (module, exports) {
   };
 });
 
-var asyncGenerator = function () {
-  function AwaitValue(value) {
-    this.value = value;
-  }
-
-  function AsyncGenerator(gen) {
-    var front, back;
-
-    function send(key, arg) {
-      return new Promise(function (resolve, reject) {
-        var request = {
-          key: key,
-          arg: arg,
-          resolve: resolve,
-          reject: reject,
-          next: null
-        };
-
-        if (back) {
-          back = back.next = request;
-        } else {
-          front = back = request;
-          resume(key, arg);
-        }
-      });
-    }
-
-    function resume(key, arg) {
-      try {
-        var result = gen[key](arg);
-        var value = result.value;
-
-        if (value instanceof AwaitValue) {
-          Promise.resolve(value.value).then(function (arg) {
-            resume("next", arg);
-          }, function (arg) {
-            resume("throw", arg);
-          });
-        } else {
-          settle(result.done ? "return" : "normal", result.value);
-        }
-      } catch (err) {
-        settle("throw", err);
-      }
-    }
-
-    function settle(type, value) {
-      switch (type) {
-        case "return":
-          front.resolve({
-            value: value,
-            done: true
-          });
-          break;
-
-        case "throw":
-          front.reject(value);
-          break;
-
-        default:
-          front.resolve({
-            value: value,
-            done: false
-          });
-          break;
-      }
-
-      front = front.next;
-
-      if (front) {
-        resume(front.key, front.arg);
-      } else {
-        back = null;
-      }
-    }
-
-    this._invoke = send;
-
-    if (typeof gen.return !== "function") {
-      this.return = undefined;
-    }
-  }
-
-  if (typeof Symbol === "function" && Symbol.asyncIterator) {
-    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
-      return this;
-    };
-  }
-
-  AsyncGenerator.prototype.next = function (arg) {
-    return this._invoke("next", arg);
-  };
-
-  AsyncGenerator.prototype.throw = function (arg) {
-    return this._invoke("throw", arg);
-  };
-
-  AsyncGenerator.prototype.return = function (arg) {
-    return this._invoke("return", arg);
-  };
-
-  return {
-    wrap: function (fn) {
-      return function () {
-        return new AsyncGenerator(fn.apply(this, arguments));
-      };
-    },
-    await: function (value) {
-      return new AwaitValue(value);
-    }
-  };
-}();
-
-
+var index_1 = index.resolve;
+var index_2 = index.normalize;
+var index_3 = index.isAbsolute;
+var index_4 = index.join;
+var index_5 = index.relative;
+var index_6 = index.sep;
+var index_7 = index.delimiter;
+var index_8 = index.dirname;
+var index_9 = index.basename;
+var index_10 = index.extname;
 
 var asyncToGenerator = function (fn) {
   return function () {
@@ -476,20 +431,6 @@ var createClass = function () {
 
 
 
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
 
 
 
@@ -571,29 +512,8 @@ var toConsumableArray = function (arr) {
   }
 };
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
 
 function branchingImport(arg) {
   // Assuming `process.browser` is defined via DefinePlugin on webpack, this
@@ -614,10 +534,10 @@ function branchingImport(arg) {
     name = arg[id];
   }
   if (process.browser) {
-    return Environment.self[name];
+    return globalScope[name];
     // eslint-disable-next-line no-else-return
   } else {
-    if (Environment.type !== 'node') {
+    if (!isNode) {
       return undefined;
     }
     try {
@@ -631,13 +551,13 @@ function branchingImport(arg) {
 function runtimeImport(id) {
   // This will throw error on browser, in which `process` is typically not
   // defined in the global scope. Re-importing after defining `process.browser`
-  // in the global scope will evaluate the conditional in `branchingImport` for
-  // rollup's bundles.
+  // in the global scope will evaluate the conditional in
+  // `branchingImport` for rollup's bundles.
   try {
     return branchingImport(id);
   } catch (e) {
-    Environment.self.process = {
-      browser: Environment.type !== 'node'
+    globalScope.process = {
+      browser: !isNode
     };
   }
   return branchingImport(id);
@@ -654,7 +574,7 @@ function importOptional(id) {
 function importRequired(id) {
   var module = runtimeImport(id);
   if (module === undefined) {
-    if (Environment.type === 'node') {
+    if (isNode) {
       throw new Error('Could not resolve module "' + id + '"');
     } else {
       throw new Error('"' + id + '" isn\u2019t defined in the global scope');
@@ -666,7 +586,7 @@ function importRequired(id) {
 function importNode(id) {
   var module = runtimeImport(id);
   if (module === undefined) {
-    if (Environment.type === 'node') {
+    if (isNode) {
       throw new Error('Could not resolve module "' + id + '"');
     }
     return {};
@@ -677,7 +597,7 @@ function importNode(id) {
 function importBrowser(id) {
   var module = runtimeImport(id);
   if (module === undefined) {
-    if (Environment.type !== 'node') {
+    if (!isNode) {
       throw new Error('"' + id + '" isn\u2019t defined in the global scope');
     }
     return {};
@@ -685,129 +605,78 @@ function importBrowser(id) {
   return module;
 }
 
-var External = {
+Object.assign(runtimeImport, {
   optional: importOptional,
   required: importRequired,
-  browser: importBrowser,
-  node: importNode
+  node: importNode,
+  browser: importBrowser
+});
+
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
+
+var nodePath = importNode('path');
+
+
+
+var resolve = function () {
+  return isNode ? nodePath.resolve : function resolve() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return index.resolve.apply(index, ['/'].concat(args));
+  };
+}();
+
+var normalize = function () {
+  return isNode ? nodePath.normalize : index.normalize;
+}();
+
+var join = function () {
+  return isNode ? nodePath.join : index.join;
+}();
+
+var relative = function () {
+  return isNode ? nodePath.relative : index.relative;
+}();
+
+var dirname = function () {
+  return isNode ? nodePath.dirname : index.dirname;
+}();
+
+var basename = function () {
+  return isNode ? nodePath.basename : index.basename;
+}();
+
+var extname = function () {
+  return isNode ? nodePath.extname : index.extname;
+}();
+
+var delimiter = function () {
+  return isNode ? nodePath.delimiter : index.delimiter;
+}();
+
+var sep = function () {
+  return isNode ? nodePath.sep : index.sep;
+}();
+
+var FilePath = {
+  resolve: resolve,
+  normalize: normalize,
+  join: join,
+  relative: relative,
+  dirname: dirname,
+  basename: basename,
+  extname: extname,
+  delimiter: delimiter,
+  sep: sep
 };
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
 
-var nodePath = External.node('path');
-
-function currentScriptPath() {
-  switch (Environment.type) {
-    case 'browser':
-      {
-        // eslint-disable-next-line no-underscore-dangle
-        var currentScript = document.currentScript || document._currentScript;
-        return currentScript && currentScript.src || undefined;
-      }
-    case 'worker':
-      // eslint-disable-next-line no-restricted-globals
-      return self.location.href;
-    case 'node':
-      return __filename;
-    default:
-      break;
-  }
-  return undefined;
-}
-
-var initialScriptPath = currentScriptPath();
-
-var aliases = void 0;
-if (Environment.type === 'node') {
-  aliases = {
-    resolve: nodePath.resolve,
-    normalize: nodePath.normalize,
-    join: nodePath.join,
-    relative: nodePath.relative,
-    dirname: nodePath.dirname,
-    basename: nodePath.basename,
-    extname: nodePath.extname,
-    separator: nodePath.sep,
-    delimiter: nodePath.delimiter
-  };
-} else {
-  aliases = {
-    resolve: function resolve() {
-      for (var _len = arguments.length, paths = Array(_len), _key = 0; _key < _len; _key++) {
-        paths[_key] = arguments[_key];
-      }
-
-      return index.resolve.apply(index, ['/'].concat(paths));
-    },
-
-
-    normalize: index.normalize,
-    join: index.join,
-    relative: index.relative,
-    dirname: index.dirname,
-    basename: index.basename,
-    extname: index.extname,
-    separator: index.sep,
-    delimiter: index.delimiter
-  };
-}
-
-var FilePath = _extends({
-  self: initialScriptPath,
-
-  get current() {
-    return currentScriptPath();
-  }
-
-}, aliases);
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-function Namespace() {
+function createNamespace() {
   var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
 
   var symbol = Symbol(name);
@@ -824,238 +693,10 @@ function Namespace() {
   };
 }
 
-// Unique ID creation requires a high quality random # generator.  In the
-// browser this is a little complicated due to unknown quality of Math.random()
-// and inconsistent support for the `crypto` API.  We do the best we can via
-// feature-detection
-var rng;
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
 
-var crypto = commonjsGlobal.crypto || commonjsGlobal.msCrypto; // for IE 11
-if (crypto && crypto.getRandomValues) {
-  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
-  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
-  rng = function whatwgRNG() {
-    crypto.getRandomValues(rnds8);
-    return rnds8;
-  };
-}
-
-if (!rng) {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var rnds = new Array(16);
-  rng = function rng() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return rnds;
-  };
-}
-
-var rngBrowser = rng;
-
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-var byteToHex = [];
-for (var i = 0; i < 256; ++i) {
-  byteToHex[i] = (i + 0x100).toString(16).substr(1);
-}
-
-function bytesToUuid(buf, offset) {
-  var i = offset || 0;
-  var bth = byteToHex;
-  return bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]];
-}
-
-var bytesToUuid_1 = bytesToUuid;
-
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-
-// random #'s we need to init node and clockseq
-var _seedBytes = rngBrowser();
-
-// Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-var _nodeId = [_seedBytes[0] | 0x01, _seedBytes[1], _seedBytes[2], _seedBytes[3], _seedBytes[4], _seedBytes[5]];
-
-// Per 4.2.2, randomize (14 bit) clockseq
-var _clockseq = (_seedBytes[6] << 8 | _seedBytes[7]) & 0x3fff;
-
-// Previous uuid creation time
-var _lastMSecs = 0;
-var _lastNSecs = 0;
-
-// See https://github.com/broofa/node-uuid for API details
-function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || [];
-
-  options = options || {};
-
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
-
-  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
-
-  // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
-
-  // Time since last uuid creation (in msecs)
-  var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000;
-
-  // Per 4.2.1.2, Bump clockseq on clock regression
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  }
-
-  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  }
-
-  // Per 4.2.1.2 Throw error if too many uuids are requested
-  if (nsecs >= 10000) {
-    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
-  }
-
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq;
-
-  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-  msecs += 12219292800000;
-
-  // `time_low`
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff;
-
-  // `time_mid`
-  var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff;
-
-  // `time_high_and_version`
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-  b[i++] = tmh >>> 16 & 0xff;
-
-  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-  b[i++] = clockseq >>> 8 | 0x80;
-
-  // `clock_seq_low`
-  b[i++] = clockseq & 0xff;
-
-  // `node`
-  var node = options.node || _nodeId;
-  for (var n = 0; n < 6; ++n) {
-    b[i + n] = node[n];
-  }
-
-  return buf ? buf : bytesToUuid_1(b);
-}
-
-var v1_1 = v1;
-
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
-
-  if (typeof options == 'string') {
-    buf = options == 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
-
-  var rnds = options.random || (options.rng || rngBrowser)();
-
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = rnds[6] & 0x0f | 0x40;
-  rnds[8] = rnds[8] & 0x3f | 0x80;
-
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
-
-  return buf || bytesToUuid_1(rnds);
-}
-
-var v4_1 = v4;
-
-var uuid = v4_1;
-uuid.v1 = v1_1;
-uuid.v4 = v4_1;
-
-var index$1 = uuid;
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-// Just use uuid v4 for now
-var UUID = index$1.v4;
-
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
-
-var internal = Namespace('Worker');
+var internal = createNamespace('Worker');
 
 function handleApply(property, uuid) {
   for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -1064,9 +705,9 @@ function handleApply(property, uuid) {
 
   var _this = this;
 
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve$$1, reject) {
     var scope = internal(_this);
-    var worker = scope.worker.worker;
+    var worker = scope.worker;
 
     var callback = function callback(event) {
       if (event.data.uuid !== uuid) {
@@ -1075,7 +716,7 @@ function handleApply(property, uuid) {
       if (event.data.error) {
         reject(new Error(event.data.error));
       } else {
-        resolve(_this.constructor.transform(event.data.result, property));
+        resolve$$1(_this.constructor.transform(event.data.result, property));
       }
       worker.removeEventListener('message', callback, false);
       --scope.running;
@@ -1102,7 +743,7 @@ var Worker = function () {
     var scope = internal(this);
     scope.running = 0;
     scope.name = name || this.constructor.name;
-    scope.worker = new Environment.self.Worker(path);
+    scope.worker = new Global.scope.Worker(path);
 
     // Post initial message
     scope.worker.postMessage(scope.name);
@@ -1114,7 +755,7 @@ var Worker = function () {
       if (property === 'running') {
         return Reflect.get(this, property);
       }
-      return handleApply.bind(this, property, UUID());
+      return handleApply.bind(this, property, v4_1());
     }
   }, {
     key: 'running',
@@ -1145,29 +786,8 @@ var Worker = function () {
   return Worker;
 }();
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
 
 /* eslint-disable no-console */
 /* eslint-disable no-restricted-globals */
@@ -1180,7 +800,7 @@ var Transferable = function Transferable(message) {
   this.list = list;
 };
 
-var internal$1 = Namespace('WorkerInstance');
+var internal$1 = createNamespace('WorkerInstance');
 
 var WorkerInstance = function () {
   function WorkerInstance() {
@@ -1193,7 +813,7 @@ var WorkerInstance = function () {
   createClass(WorkerInstance, [{
     key: 'start',
     value: function start() {
-      if (Environment.type !== 'worker') {
+      if (!Global.isWorker) {
         throw new Error('Attempt to start worker instance on non-worker');
       }
       var scope = internal$1(this);
@@ -1293,29 +913,8 @@ var WorkerInstance = function () {
   return WorkerInstance;
 }();
 
-//
-//  The MIT License
-//
-//  Copyright (C) 2016-Present Shota Matsuda
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a
-//  copy of this software and associated documentation files (the "Software"),
-//  to deal in the Software without restriction, including without limitation
-//  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-//  and/or sell copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in
-//  all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//  DEALINGS IN THE SOFTWARE.
-//
+// The MIT License
+// Copyright (C) 2016-Present Shota Matsuda
 
 exports.Worker = Worker;
 exports.WorkerInstance = WorkerInstance;
