@@ -7,7 +7,6 @@ import nodeResolve from 'rollup-plugin-node-resolve'
 
 export default {
   input: './dist/planck-worker.module.js',
-  sourcemap: true,
   plugins: [
     nodeResolve({ browser: true }),
     commonjs(),
@@ -24,12 +23,11 @@ export default {
       babelrc: false,
     }),
   ],
-  output: [
-    {
-      format: 'umd',
-      extend: true,
-      name: 'Planck',
-      file: './dist/planck-worker.js',
-    },
-  ],
+  output: {
+    format: 'umd',
+    extend: true,
+    name: 'Planck',
+    file: './dist/planck-worker.js',
+    sourcemap: true,
+  },
 }

@@ -7,7 +7,6 @@ import nodeResolve from 'rollup-plugin-node-resolve'
 
 export default {
   input: './test/fixture.js',
-  sourcemap: true,
   plugins: [
     nodeResolve({ browser: true }),
     commonjs(),
@@ -24,10 +23,9 @@ export default {
       babelrc: false,
     }),
   ],
-  output: [
-    {
-      format: 'iife',
-      file: './dist/test/fixture.js',
-    },
-  ],
+  output: {
+    format: 'iife',
+    file: './dist/test/fixture.js',
+    sourcemap: true,
+  },
 }
