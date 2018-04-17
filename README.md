@@ -4,6 +4,7 @@ Planck Worker
 [![License](http://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat
 )](http://mit-license.org)
 [![npm version](https://badge.fury.io/js/%40takram%2Fplanck-worker.svg)](http://badge.fury.io/js/%40takram%2Fplanck-worker)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![Build Status](https://travis-ci.org/takram-design-engineering/planck-worker.svg?branch=master)](https://travis-ci.org/takram-design-engineering/planck-worker)
 [![Sauce Test Status](https://saucelabs.com/buildstatus/planck-worker)](https://saucelabs.com/u/planck-worker)
 

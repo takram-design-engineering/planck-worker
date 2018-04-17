@@ -9,13 +9,12 @@ import { Worker } from '../..'
 const { expect } = chai
 chai.use(chaiAsPromised)
 
-// eslint-disable-next-line func-names
 describe('Worker', function () {
   this.timeout(300000)
 
   const worker = Worker.new({
     name: 'TestWorkerInstance',
-    path: '/dist/test/fixture.js',
+    path: '/dist/test/fixture.js'
   })
 
   it('sends messages to worker instance', () => {
@@ -23,7 +22,7 @@ describe('Worker', function () {
     const expected2 = { a: ['a', 1], b: { a: 'a', b: 1 } }
     return Promise.all([
       expect(worker.echo(expected1)).fulfilled,
-      expect(worker.echo(expected2)).fulfilled,
+      expect(worker.echo(expected2)).fulfilled
     ]).then(results => {
       const [result1, result2] = results
       expect(result1).deep.equal(expected1)
@@ -51,7 +50,7 @@ describe('Worker', function () {
   it('rejects with error message when calling undefined function', () => {
     return Promise.all([
       expect(worker.other()).rejected,
-      expect(worker.other()).rejected,
+      expect(worker.other()).rejected
     ])
   })
 
@@ -60,7 +59,7 @@ describe('Worker', function () {
     const expected2 = 'Test error message 2'
     return Promise.all([
       expect(worker.error(expected1)).rejected,
-      expect(worker.error(expected2)).rejected,
+      expect(worker.error(expected2)).rejected
     ]).then(errors => {
       const [error1, error2] = errors
       expect(error1.message).equal(expected1)
@@ -73,7 +72,7 @@ describe('Worker', function () {
     const expected2 = [5, 6, 7, 8]
     return Promise.all([
       expect(worker.transfer(expected1)).fulfilled,
-      expect(worker.transfer(expected2)).fulfilled,
+      expect(worker.transfer(expected2)).fulfilled
     ]).then(results => {
       const [result1, result2] = results
       expect(result1).instanceof(ArrayBuffer)

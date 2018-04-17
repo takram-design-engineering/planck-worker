@@ -9,7 +9,7 @@ import Namespace from '@takram/planck-core/src/Namespace'
 
 export const internal = Namespace('Worker')
 
-function handleApply(property, uuid, ...args) {
+function handleApply (property, uuid, ...args) {
   return new Promise((resolve, reject) => {
     const scope = internal(this)
     const { worker } = scope
@@ -36,7 +36,7 @@ function handleApply(property, uuid, ...args) {
 
 export default class Worker {
   // This constructor provides for inheritance only
-  constructor({ name, path = FilePath.self } = {}) {
+  constructor ({ name, path = FilePath.self } = {}) {
     const scope = internal(this)
     scope.running = 0
     scope.name = name || this.constructor.name
@@ -46,27 +46,27 @@ export default class Worker {
     scope.worker.postMessage(scope.name)
   }
 
-  get(target, property, receiver) {
+  get (target, property, receiver) {
     if (property === 'running') {
       return Reflect.get(this, property)
     }
     return handleApply.bind(this, property, uuidv4())
   }
 
-  get running() {
+  get running () {
     const scope = internal(this)
     return scope.running
   }
 
-  static transform(result) {
+  static transform (result) {
     return result
   }
 
-  static inverseTransform(result) {
+  static inverseTransform (result) {
     return result
   }
 
-  static new(...args) {
+  static new (...args) {
     return new Proxy({}, new this(...args))
   }
 }

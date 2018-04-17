@@ -5,8 +5,10 @@ import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 
+import pkg from './package.json'
+
 export default {
-  input: './dist/planck-worker.module.js',
+  input: pkg.module,
   plugins: [
     nodeResolve({ browser: true }),
     commonjs(),
@@ -16,18 +18,20 @@ export default {
         'es2016',
         'es2017',
         'stage-3',
+        'stage-2'
       ],
       plugins: [
-        'external-helpers',
+        'external-helpers'
       ],
-      babelrc: false,
-    }),
+      babelrc: false
+    })
   ],
   output: {
     format: 'umd',
+    exports: 'named',
     extend: true,
     name: 'Planck',
-    file: './dist/planck-worker.js',
-    sourcemap: true,
-  },
+    file: pkg.main,
+    sourcemap: true
+  }
 }

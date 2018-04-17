@@ -4,21 +4,20 @@
 const path = require('path')
 const webpack = require('webpack')
 
-const pkg = require('./package.json')
-
 module.exports = {
+  mode: 'development',
   entry: [
-    path.resolve(__dirname, 'test', 'unit.js'),
+    path.resolve(__dirname, 'test/unit.js')
   ],
   output: {
-    filename: 'webpack.js',
-    path: path.resolve(__dirname, 'dist', 'test', 'unit'),
+    path: path.resolve(__dirname, 'dist/test/unit'),
+    filename: 'webpack.js'
   },
   devtool: 'source-map',
   externals: {
-    'source-map-support/register': 'null',
     'chai': 'chai',
     'mocha': 'mocha',
+    'source-map-support/register': 'null'
   },
   module: {
     rules: [
@@ -34,17 +33,18 @@ module.exports = {
                 'es2016',
                 'es2017',
                 'stage-3',
-              ],
-            },
-          },
-        ],
-      },
-    ],
+                'stage-2'
+              ]
+            }
+          }
+        ]
+      }
+    ]
   },
   plugins: [
     new webpack.DefinePlugin({
       'process.browser': JSON.stringify(true),
-      'BUNDLER': JSON.stringify('webpack'),
-    }),
-  ],
+      'BUNDLER': JSON.stringify('webpack')
+    })
+  ]
 }

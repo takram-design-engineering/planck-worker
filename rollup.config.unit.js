@@ -6,7 +6,8 @@ import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 import path from 'path'
 
-const pkg = require('./package.json')
+import config from './rollup.config'
+import pkg from './package.json'
 
 export default {
   input: './test/unit.js',
@@ -19,28 +20,29 @@ export default {
         'es2016',
         'es2017',
         'stage-3',
+        'stage-2'
       ],
       plugins: [
-        'external-helpers',
+        'external-helpers'
       ],
-      babelrc: false,
-    }),
+      babelrc: false
+    })
   ],
   external: [
-    'source-map-support/register',
     path.resolve(pkg.browser),
     'chai',
     'mocha',
+    'source-map-support/register'
   ],
   output: {
     intro: 'var BUNDLER = "rollup";',
     globals: {
-      [path.resolve(pkg.browser)]: 'Planck',
+      [path.resolve(pkg.browser)]: config.output.name,
       'chai': 'chai',
-      'mocha': 'mocha',
+      'mocha': 'mocha'
     },
     format: 'iife',
     file: './dist/test/unit/rollup.js',
-    sourcemap: true,
-  },
+    sourcemap: true
+  }
 }

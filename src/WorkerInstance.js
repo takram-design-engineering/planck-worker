@@ -1,14 +1,13 @@
 // The MIT License
 // Copyright (C) 2016-Present Shota Matsuda
 
-/* eslint-disable no-console */
-/* eslint-disable no-restricted-globals */
+/* eslint-env worker */
 
 import Global from '@takram/planck-core/src/Global'
 import Namespace from '@takram/planck-core/src/Namespace'
 
 class Transferable {
-  constructor(message, list = []) {
+  constructor (message, list = []) {
     this.message = message
     this.list = list
   }
@@ -17,12 +16,12 @@ class Transferable {
 export const internal = Namespace('WorkerInstance')
 
 export default class WorkerInstance {
-  constructor() {
+  constructor () {
     const scope = internal(this)
     scope.handleMessage = this.handleMessage.bind(this)
   }
 
-  start() {
+  start () {
     if (!Global.isWorker) {
       throw new Error('Attempt to start worker instance on non-worker')
     }
@@ -31,17 +30,17 @@ export default class WorkerInstance {
     console.log(`${this.constructor.name} started`)
   }
 
-  stop() {
+  stop () {
     const scope = internal(this)
     self.removeEventListener('message', scope.handleMessage, false)
     console.log(`${this.constructor.name} stopped`)
   }
 
-  transfer(message, list = []) {
+  transfer (message, list = []) {
     throw new Transferable(message, list)
   }
 
-  async handleMessage(event) {
+  async handleMessage (event) {
     const { property, uuid, args } = event.data
     let result
     try {
@@ -63,7 +62,7 @@ export default class WorkerInstance {
     }
   }
 
-  static register() {
+  static register () {
     const handler = event => {
       if (event.data === this.name) {
         const instance = new this()
