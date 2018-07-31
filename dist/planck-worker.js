@@ -14,8 +14,10 @@
 	  // and inconsistent support for the `crypto` API.  We do the best we can via
 	  // feature-detection
 
-	  // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
-	  var getRandomValues = typeof crypto != 'undefined' && crypto.getRandomValues.bind(crypto) || typeof msCrypto != 'undefined' && msCrypto.getRandomValues.bind(msCrypto);
+	  // getRandomValues needs to be invoked in a context where "this" is a Crypto
+	  // implementation. Also, find the complete implementation of crypto on IE11.
+	  var getRandomValues = typeof crypto != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto);
+
 	  if (getRandomValues) {
 	    // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
 	    var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
@@ -42,11 +44,6 @@
 	  }
 	});
 
-	var rngBrowser$1 = /*#__PURE__*/Object.freeze({
-		default: rngBrowser,
-		__moduleExports: rngBrowser
-	});
-
 	/**
 	 * Convert array of 16 byte values to UUID string format of the form:
 	 * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -59,19 +56,11 @@
 	function bytesToUuid(buf, offset) {
 	  var i = offset || 0;
 	  var bth = byteToHex;
-	  return bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + '-' + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]] + bth[buf[i++]];
+	  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+	  return [bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]]].join('');
 	}
 
 	var bytesToUuid_1 = bytesToUuid;
-
-	var bytesToUuid$1 = /*#__PURE__*/Object.freeze({
-		default: bytesToUuid_1,
-		__moduleExports: bytesToUuid_1
-	});
-
-	var rng = ( rngBrowser$1 && rngBrowser ) || rngBrowser$1;
-
-	var bytesToUuid$2 = ( bytesToUuid$1 && bytesToUuid_1 ) || bytesToUuid$1;
 
 	function v4(options, buf, offset) {
 	  var i = buf && offset || 0;
@@ -82,7 +71,7 @@
 	  }
 	  options = options || {};
 
-	  var rnds = options.random || (options.rng || rng)();
+	  var rnds = options.random || (options.rng || rngBrowser)();
 
 	  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
 	  rnds[6] = rnds[6] & 0x0f | 0x40;
@@ -95,7 +84,7 @@
 	    }
 	  }
 
-	  return buf || bytesToUuid$2(rnds);
+	  return buf || bytesToUuid_1(rnds);
 	}
 
 	var v4_1 = v4;
